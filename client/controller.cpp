@@ -50,6 +50,9 @@
 #ifdef HAS_WASAPI
 #include "player/wasapi_player.hpp"
 #endif
+#ifdef HAS_SONOSLLA
+#include "player/sonoslla_player.hpp"
+#endif
 #include "player/file_player.hpp"
 
 #include "browseZeroConf/browse_mdns.hpp"
@@ -65,11 +68,12 @@
 #include <memory>
 #include <string>
 
+#include <boost/make_unique.hpp>
 using namespace std;
 using namespace player;
 
 static constexpr auto LOG_TAG = "Controller";
-static constexpr auto TIME_SYNC_INTERVAL = 1s;
+static constexpr auto TIME_SYNC_INTERVAL = std::chrono::seconds(1);
 
 Controller::Controller(boost::asio::io_context& io_context, const ClientSettings& settings) //, std::unique_ptr<MetadataAdapter> meta)
     : io_context_(io_context), timer_(io_context), settings_(settings), stream_(nullptr), decoder_(nullptr), player_(nullptr),
@@ -84,7 +88,7 @@ std::unique_ptr<Player> Controller::createPlayer(ClientSettings::Player& setting
     if (settings.player_name.empty() || settings.player_name == player_name)
     {
         settings.player_name = player_name;
-        return make_unique<PlayerType>(io_context_, settings, stream_);
+        return boost::make_unique<PlayerType>(io_context_, settings, stream_);
     }
     return nullptr;
 }
@@ -109,6 +113,9 @@ std::vector<std::string> Controller::getSupportedPlayerNames()
 #endif
 #ifdef HAS_WASAPI
     result.emplace_back(player::WASAPI);
+#endif
+#ifdef HAS_SONOSLLA
+    result.emplace_back(player::SONOSLLA);
 #endif
     result.emplace_back(player::FILE);
     return result;
@@ -166,18 +173,18 @@ void Controller::getNextMessage()
             player_.reset(nullptr);
 
             if (headerChunk_->codec == "pcm")
-                decoder_ = make_unique<decoder::PcmDecoder>();
+                decoder_ = boost::make_unique<decoder::PcmDecoder>();
 #if defined(HAS_OGG) && (defined(HAS_TREMOR) || defined(HAS_VORBIS))
             else if (headerChunk_->codec == "ogg")
-                decoder_ = make_unique<decoder::OggDecoder>();
+                decoder_ = boost::make_unique<decoder::OggDecoder>();
 #endif
 #if defined(HAS_FLAC)
             else if (headerChunk_->codec == "flac")
-                decoder_ = make_unique<decoder::FlacDecoder>();
+                decoder_ = boost::make_unique<decoder::FlacDecoder>();
 #endif
 #if defined(HAS_OPUS)
             else if (headerChunk_->codec == "opus")
-                decoder_ = make_unique<decoder::OpusDecoder>();
+                decoder_ = boost::make_unique<decoder::OpusDecoder>();
 #endif
             else
                 throw SnapException("codec not supported: \"" + headerChunk_->codec + "\"");
@@ -188,6 +195,10 @@ void Controller::getNextMessage()
             stream_ = make_shared<Stream>(sampleFormat_, settings_.player.sample_format);
             stream_->setBufferLen(std::max(0, serverSettings_->getBufferMs() - serverSettings_->getLatency() - settings_.player.latency));
 
+#ifdef HAS_SONOSLLA
+            if (!player_)
+                player_ = createPlayer<SonosLLAPlayer>(settings_.player, player::SONOSLLA);
+#endif
 #ifdef HAS_ALSA
             if (!player_)
                 player_ = createPlayer<AlsaPlayer>(settings_.player, player::ALSA);
@@ -267,7 +278,7 @@ void Controller::sendTimeSyncMessage(int quick_syncs)
 {
     auto timeReq = std::make_shared<msg::Time>();
     clientConnection_->sendRequest<msg::Time>(
-        timeReq, 2s, [this, quick_syncs](const boost::system::error_code& ec, const std::unique_ptr<msg::Time>& response) mutable {
+        timeReq, std::chrono::seconds(2), [this, quick_syncs](const boost::system::error_code& ec, const std::unique_ptr<msg::Time>& response) mutable {
             if (ec)
             {
                 LOG(ERROR, LOG_TAG) << "Time sync request failed: " << ec.message() << "\n";
@@ -285,7 +296,7 @@ void Controller::sendTimeSyncMessage(int quick_syncs)
                 if (--quick_syncs == 0)
                     LOG(INFO, LOG_TAG) << "diff to server [ms]: "
                                        << static_cast<float>(TimeProvider::getInstance().getDiffToServer<chronos::usec>().count()) / 1000.f << "\n";
-                next = 100us;
+                next = std::chrono::microseconds(100);
             }
             timer_.expires_after(next);
             timer_.async_wait([this, quick_syncs](const boost::system::error_code& ec) {
@@ -349,14 +360,14 @@ void Controller::start()
                 settings_.server.host = host;
                 settings_.server.port = port;
                 LOG(INFO, LOG_TAG) << "Found server " << settings_.server.host << ":" << settings_.server.port << "\n";
-                clientConnection_ = make_unique<ClientConnection>(io_context_, settings_.server);
+                clientConnection_ = boost::make_unique<ClientConnection>(io_context_, settings_.server);
                 worker();
             }
         });
     }
     else
     {
-        clientConnection_ = make_unique<ClientConnection>(io_context_, settings_.server);
+        clientConnection_ = boost::make_unique<ClientConnection>(io_context_, settings_.server);
         worker();
     }
 }
@@ -375,7 +386,7 @@ void Controller::reconnect()
     player_.reset();
     stream_.reset();
     decoder_.reset();
-    timer_.expires_after(1s);
+    timer_.expires_after(std::chrono::seconds(1));
     timer_.async_wait([this](const boost::system::error_code& ec) {
         if (!ec)
         {
@@ -397,7 +408,7 @@ void Controller::worker()
             // Say hello to the server
             auto hello = std::make_shared<msg::Hello>(macAddress, settings_.host_id, settings_.instance);
             clientConnection_->sendRequest<msg::ServerSettings>(
-                hello, 2s, [this](const boost::system::error_code& ec, std::unique_ptr<msg::ServerSettings> response) mutable {
+                hello, std::chrono::seconds(2), [this](const boost::system::error_code& ec, std::unique_ptr<msg::ServerSettings> response) mutable {
                     if (ec)
                     {
                         LOG(ERROR, LOG_TAG) << "Failed to send hello request, error: " << ec.message() << "\n";

@@ -64,7 +64,7 @@ MetaStream::MetaStream(PcmStream::Listener* pcmListener, const std::vector<std::
         throw SnapException("Meta stream '" + getName() + "' must contain at least one stream");
 
     active_stream_ = streams_.front();
-    resampler_ = make_unique<Resampler>(active_stream_->getSampleFormat(), sampleFormat_);
+    resampler_ = boost::make_unique<Resampler>(active_stream_->getSampleFormat(), sampleFormat_);
 }
 
 
@@ -112,7 +112,7 @@ void MetaStream::onStateChanged(const PcmStream* pcmStream, ReaderState state)
                            << new_stream->getName() << "\n";
         active_stream_ = new_stream;
         setProperties(active_stream_->getProperties());
-        resampler_ = make_unique<Resampler>(active_stream_->getSampleFormat(), sampleFormat_);
+        resampler_ = boost::make_unique<Resampler>(active_stream_->getSampleFormat(), sampleFormat_);
     };
 
     for (const auto& stream : streams_)
@@ -161,7 +161,7 @@ void MetaStream::onChunkRead(const PcmStream* pcmStream, const msg::PcmChunk& ch
     auto next_read = next_tick_ - currentTick;
 
     // Read took longer, wait for the buffer to fill up
-    if (next_read < 0ms)
+    if (next_read < std::chrono::milliseconds(0))
     {
         // if (next_read >= -kResyncTolerance)
         // {

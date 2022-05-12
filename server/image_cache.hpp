@@ -28,7 +28,7 @@
 #include <iostream>
 #include <map>
 #include <mutex>
-#include <optional>
+#include <boost/optional.hpp>
 #include <regex>
 #include <string>
 
@@ -80,12 +80,12 @@ public:
         }
     }
 
-    std::optional<std::string> getImage(const std::string& url)
+    boost::optional<std::string> getImage(const std::string& url)
     {
         std::lock_guard<std::mutex> lock(mutex_);
         auto iter = url_to_data_.find(url);
         if (iter == url_to_data_.end())
-            return std::nullopt;
+            return {}; // TODO:REG std::nullopt;
         else
             return iter->second;
     }

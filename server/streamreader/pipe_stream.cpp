@@ -28,6 +28,7 @@
 #include <cerrno>
 #include <memory>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
@@ -63,7 +64,7 @@ void PipeStream::do_connect()
     pipe_size = fcntl(fd, F_GETPIPE_SZ);
 #endif
     LOG(TRACE, LOG_TAG) << "Stream: " << name_ << ", connect to pipe: " << uri_.path << ", fd: " << fd << ", pipe size: " << pipe_size << "\n";
-    stream_ = std::make_unique<boost::asio::posix::stream_descriptor>(strand_, fd);
+    stream_ = boost::make_unique<boost::asio::posix::stream_descriptor>(strand_, fd);
     on_connect();
 }
 

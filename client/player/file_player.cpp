@@ -31,7 +31,7 @@ namespace player
 {
 
 static constexpr auto LOG_TAG = "FilePlayer";
-static constexpr auto kDefaultBuffer = 50ms;
+static constexpr auto kDefaultBuffer = std::chrono::milliseconds(50);
 
 static constexpr auto kDescription = "Raw PCM file output";
 
@@ -57,11 +57,11 @@ FilePlayer::FilePlayer(boost::asio::io_context& io_context, const ClientSettings
 
     if (filename.empty() || (filename == "stdout"))
     {
-        file_.reset(stdout, [](auto p) { std::ignore = p; });
+        file_.reset(stdout, [](::FILE* p) { std::ignore = p; });
     }
     else if (filename == "stderr")
     {
-        file_.reset(stderr, [](auto p) { std::ignore = p; });
+        file_.reset(stderr, [](::FILE* p) { std::ignore = p; });
     }
     else if (filename != "null")
     {
@@ -71,7 +71,7 @@ FilePlayer::FilePlayer(boost::asio::io_context& io_context, const ClientSettings
         if ((mode != "w") && (mode != "a"))
             throw SnapException("Mode must be w (write) or a (append)");
         mode += "b";
-        file_.reset(fopen(filename.c_str(), mode.c_str()), [](auto p) { fclose(p); });
+        file_.reset(fopen(filename.c_str(), mode.c_str()), [](::FILE* p) { fclose(p); });
         if (!file_)
             throw SnapException("Error opening file: '" + filename + "', error: " + cpt::to_string(errno));
     }
@@ -98,7 +98,7 @@ void FilePlayer::requestAudio()
     if (buffer_.size() < needed)
         buffer_.resize(needed);
 
-    if (!stream_->getPlayerChunkOrSilence(buffer_.data(), 10ms, numFrames))
+    if (!stream_->getPlayerChunkOrSilence(buffer_.data(), std::chrono::milliseconds(10), numFrames))
     {
         // LOG(INFO, LOG_TAG) << "Failed to get chunk. Playing silence.\n";
     }
@@ -122,7 +122,7 @@ void FilePlayer::loop()
     next_request_ += kDefaultBuffer;
     auto now = std::chrono::steady_clock::now();
     if (next_request_ < now)
-        next_request_ = now + 1ms;
+        next_request_ = now + std::chrono::milliseconds(1);
 
     timer_.expires_at(next_request_);
     timer_.async_wait([this](boost::system::error_code ec) {

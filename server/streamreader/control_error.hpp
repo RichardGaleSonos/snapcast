@@ -61,9 +61,15 @@ enum class ControlErrc
     internal_error = -32603
 };
 
-namespace snapcast::error::control
+namespace snapcast
+{
+namespace error
+{
+namespace control
 {
 const std::error_category& category();
+}
+}
 }
 
 

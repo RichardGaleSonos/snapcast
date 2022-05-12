@@ -44,7 +44,7 @@ elseif(NOT ANDROID)
     # ALSA
     if (ALSA_FOUND)
         list(APPEND CLIENT_SOURCES player/alsa_player.cpp)
-        list(APPEND CLIENT_LIBRARIES ${ALSA_LIBRARIES})
+        list(APPEND CLIENT_LIBRARIES ${ALSA_LINK_LIBRARIES})
         list(APPEND CLIENT_INCLUDE ${ALSA_INCLUDE_DIRS})
     endif (ALSA_FOUND)
 
@@ -53,6 +53,12 @@ elseif(NOT ANDROID)
         list(APPEND CLIENT_LIBRARIES ${PULSE_LIBRARIES})
         list(APPEND CLIENT_INCLUDE ${PULSE_INCLUDE_DIRS})
     endif (PULSE_FOUND)
+
+    if (SONOSLLA_FOUND)
+        list(APPEND CLIENT_SOURCES player/sonoslla_player.cpp)
+        list(APPEND CLIENT_LIBRARIES ${SONOSLLA_LIBRARIES})
+        list(APPEND CLIENT_INCLUDE ${SONOSLLA_INCLUDE_DIRS})
+    endif()
 endif (MACOSX)
 
 if (ANDROID)
@@ -70,13 +76,6 @@ if (ANDROID)
     list(APPEND CLIENT_LIBRARIES OpenSLES)
 
 else()
-    # if OGG then tremor or vorbis
-    if (OGG_FOUND)
-        list(APPEND CLIENT_SOURCES decoder/ogg_decoder.cpp)
-        list(APPEND CLIENT_LIBRARIES ${OGG_LIBRARIES})
-        list(APPEND CLIENT_INCLUDE ${OGG_INCLUDE_DIRS})
-    endif (OGG_FOUND)
-
     # Tremor (fixed-point) or libvorbis (floating-point)
     if (TREMOR_FOUND)
         list(APPEND CLIENT_LIBRARIES ${TREMOR_LIBRARIES})
@@ -85,6 +84,13 @@ else()
         list(APPEND CLIENT_LIBRARIES ${VORBIS_LIBRARIES})
         list(APPEND CLIENT_INCLUDE ${VORBIS_INCLUDE_DIRS})
     endif (TREMOR_FOUND)
+
+    # if OGG then tremor or vorbis
+    if (OGG_FOUND)
+        list(APPEND CLIENT_SOURCES decoder/ogg_decoder.cpp)
+        list(APPEND CLIENT_LIBRARIES ${OGG_LIBRARIES})
+        list(APPEND CLIENT_INCLUDE ${OGG_INCLUDE_DIRS})
+    endif (OGG_FOUND)
 
     if (FLAC_FOUND)
         list(APPEND CLIENT_SOURCES decoder/flac_decoder.cpp)

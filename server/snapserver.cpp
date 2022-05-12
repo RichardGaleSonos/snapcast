@@ -41,11 +41,13 @@
 
 #include <boost/asio/ip/host_name.hpp>
 
+#include <boost/make_unique.hpp>
 using namespace std;
 using namespace popl;
 
 static constexpr auto LOG_TAG = "Snapserver";
 
+ImageCache image_cache;
 
 int main(int argc, char* argv[])
 {
@@ -255,7 +257,7 @@ int main(int argc, char* argv[])
                 settings.server.data_dir = "/var/lib/snapserver";
             Config::instance().init(settings.server.data_dir, settings.server.user, settings.server.group);
 
-            daemon = std::make_unique<Daemon>(settings.server.user, settings.server.group, settings.server.pid_file);
+            daemon = boost::make_unique<Daemon>(settings.server.user, settings.server.group, settings.server.pid_file);
             processPriority = std::min(std::max(-20, processPriority), 19);
             if (processPriority != 0)
                 setpriority(PRIO_PROCESS, 0, processPriority);
@@ -271,7 +273,7 @@ int main(int argc, char* argv[])
 
         boost::asio::io_context io_context;
 #if defined(HAS_AVAHI) || defined(HAS_BONJOUR)
-        auto publishZeroConfg = std::make_unique<PublishZeroConf>("Snapcast", io_context);
+        auto publishZeroConfg = boost::make_unique<PublishZeroConf>("Snapcast", io_context);
         vector<mDNSService> dns_services;
         dns_services.emplace_back("_snapcast._tcp", settings.stream.port);
         dns_services.emplace_back("_snapcast-stream._tcp", settings.stream.port);
@@ -297,14 +299,14 @@ int main(int argc, char* argv[])
             settings.stream.streamChunkMs = 10;
         }
 
-        static constexpr chrono::milliseconds MIN_BUFFER_DURATION = 20ms;
+        static constexpr chrono::milliseconds MIN_BUFFER_DURATION = std::chrono::milliseconds(20);
         if (settings.stream.bufferMs < MIN_BUFFER_DURATION.count())
         {
             LOG(WARNING, LOG_TAG) << "Buffer is less than " << MIN_BUFFER_DURATION.count() << "ms, changing to " << MIN_BUFFER_DURATION.count() << "ms\n";
             settings.stream.bufferMs = MIN_BUFFER_DURATION.count();
         }
 
-        auto server = std::make_unique<Server>(io_context, settings);
+        auto server = boost::make_unique<Server>(io_context, settings);
         server->start();
 
         if (settings.server.threads < 0)

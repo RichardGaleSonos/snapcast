@@ -30,12 +30,13 @@
 #include <cstring>
 #include <iostream>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 namespace cs = chronos;
 
 static constexpr auto LOG_TAG = "Stream";
-static constexpr auto kCorrectionBegin = 100us;
+static constexpr auto kCorrectionBegin = std::chrono::microseconds(100);
 
 // #define LOG_LATENCIES
 
@@ -63,7 +64,7 @@ Stream::Stream(const SampleFormat& in_format, const SampleFormat& out_format)
     x = 1,000016667 / (1,000016667 - 1)
     */
     // setRealSampleRate(format_.rate());
-    resampler_ = std::make_unique<Resampler>(in_format_, format_);
+    resampler_ = boost::make_unique<Resampler>(in_format_, format_);
 }
 
 
@@ -100,7 +101,7 @@ void Stream::addChunk(unique_ptr<msg::PcmChunk> chunk)
 {
     // drop chunk if it's too old. Just in case, this shouldn't happen.
     auto age = std::chrono::duration_cast<cs::msec>(TimeProvider::serverNow() - chunk->start());
-    if (age > 5s + bufferMs_.load())
+    if (age > std::chrono::seconds(5) + bufferMs_.load())
         return;
 
     auto resampled = resampler_->resample(std::move(chunk));
@@ -114,7 +115,7 @@ void Stream::addChunk(unique_ptr<msg::PcmChunk> chunk)
         while (chunks_.front_copy(front_))
         {
             age = std::chrono::duration_cast<cs::msec>(TimeProvider::serverNow() - front_->start());
-            if ((age > 5s + bufferMs_.load()) && chunks_.try_pop(front_))
+            if ((age > std::chrono::seconds(5) + bufferMs_.load()) && chunks_.try_pop(front_))
                 LOG(TRACE, LOG_TAG) << "Oldest chunk too old: " << age.count() << " ms, removing. Chunks in queue left: " << chunks_.size() << "\n";
             else
                 break;
@@ -322,7 +323,7 @@ bool Stream::getPlayerChunk(void* outputBuffer, const cs::usec& outputBufferDacT
                         {
                             // fast forward by "age" to get in sync, i.e. age = 0
                             chunk_->seek(static_cast<uint32_t>(chunk_->format.nsRate() * std::chrono::duration_cast<cs::nsec>(age).count()));
-                            age = 0s;
+                            age = std::chrono::seconds(0);
                         }
                         if (age.count() <= 0)
                             break;
@@ -390,7 +391,7 @@ bool Stream::getPlayerChunk(void* outputBuffer, const cs::usec& outputBufferDacT
             LOG(INFO, LOG_TAG) << "pMiniBuffer->full() && (abs(pMiniBuffer->mean()) > 50): " << miniBuffer_.median() << "\n";
             hard_sync_ = true;
         }
-        else if (cs::abs(age) > 500ms)
+        else if (cs::abs(age) > std::chrono::milliseconds(500))
         {
             LOG(INFO, LOG_TAG) << "abs(age > 500): " << cs::abs(age).count() << "\n";
             hard_sync_ = true;
@@ -459,7 +460,7 @@ bool Stream::getPlayerChunkOrSilence(void* outputBuffer, const chronos::usec& ou
     bool result = getPlayerChunk(outputBuffer, outputBufferDacTime, frames);
     if (!result)
     {
-        static utils::logging::TimeConditional cond(1s);
+        static utils::logging::TimeConditional cond(std::chrono::seconds(1));
         LOG(DEBUG, LOG_TAG) << cond << "Failed to get chunk, returning silence\n";
         getSilentPlayerChunk(outputBuffer, frames);
     }

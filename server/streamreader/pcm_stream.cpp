@@ -35,9 +35,11 @@
 // standard headers
 #include <memory>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
+extern ImageCache image_cache;
 namespace streamreader
 {
 
@@ -64,7 +66,7 @@ PcmStream::PcmStream(PcmStream::Listener* pcmListener, boost::asio::io_context& 
 
     if (uri_.query.find(kControlScript) != uri_.query.end())
     {
-        stream_ctrl_ = std::make_unique<ScriptStreamControl>(strand_, uri_.query[kControlScript]);
+        stream_ctrl_ = boost::make_unique<ScriptStreamControl>(strand_, uri_.query[kControlScript]);
     }
 
     if (uri_.query.find(kUriChunkMs) != uri_.query.end())
@@ -123,7 +125,7 @@ void PcmStream::onControlRequest(const jsonrpcpp::Request& request)
 
 void PcmStream::pollProperties()
 {
-    property_timer_.expires_after(10s);
+    property_timer_.expires_after(std::chrono::seconds(10));
     property_timer_.async_wait([this](const boost::system::error_code& ec) {
         if (!ec)
         {
@@ -463,7 +465,7 @@ void PcmStream::setProperties(const Properties& properties)
     if (props.metadata.has_value() && props.metadata->art_data.has_value() && !props.metadata->art_url.has_value())
     {
         auto data = base64_decode(props.metadata->art_data->data);
-        auto md5 = server_settings_.http.image_cache.setImage(getName(), std::move(data), props.metadata->art_data->extension);
+        auto md5 = image_cache.setImage(getName(), std::move(data), props.metadata->art_data->extension);
 
         std::stringstream url;
         url << "http://" << server_settings_.http.host << ":" << server_settings_.http.port << "/__image_cache?name=" << md5;
@@ -471,7 +473,7 @@ void PcmStream::setProperties(const Properties& properties)
     }
     else if (!props.metadata->art_data.has_value())
     {
-        server_settings_.http.image_cache.clear(getName());
+        image_cache.clear(getName());
     }
 
     if (props == properties_)

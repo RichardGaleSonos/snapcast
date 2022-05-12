@@ -319,9 +319,9 @@ namespace Catch {
   #endif
 
   // Check if optional is available and usable
-  #  if __has_include(<optional>) && defined(CATCH_CPP17_OR_GREATER)
+  #  if __has_include(<boost/optional.hpp>) && defined(CATCH_CPP17_OR_GREATER)
   #    define CATCH_INTERNAL_CONFIG_CPP17_OPTIONAL
-  #  endif // __has_include(<optional>) && defined(CATCH_CPP17_OR_GREATER)
+  #  endif // __has_include(<boost/optional.hpp>) && defined(CATCH_CPP17_OR_GREATER)
 
   // Check if byte is available and usable
   #  if __has_include(<cstddef>) && defined(CATCH_CPP17_OR_GREATER)
@@ -1895,11 +1895,11 @@ namespace Catch {
 #endif // CATCH_CONFIG_ENABLE_PAIR_STRINGMAKER
 
 #if defined(CATCH_CONFIG_ENABLE_OPTIONAL_STRINGMAKER) && defined(CATCH_CONFIG_CPP17_OPTIONAL)
-#include <optional>
+#include <boost/optional.hpp>
 namespace Catch {
     template<typename T>
-    struct StringMaker<std::optional<T> > {
-        static std::string convert(const std::optional<T>& optional) {
+    struct StringMaker<boost::optional<T> > {
+        static std::string convert(const boost::optional<T>& optional) {
             ReusableStringStream rss;
             if (optional.has_value()) {
                 rss << ::Catch::Detail::stringify(*optional);
@@ -8432,9 +8432,9 @@ namespace Catch {
 
 #ifndef CLARA_CONFIG_OPTIONAL_TYPE
 #ifdef __has_include
-#if __has_include(<optional>) && __cplusplus >= 201703L
-#include <optional>
-#define CLARA_CONFIG_OPTIONAL_TYPE std::optional
+#if __has_include(<boost/optional.hpp>) && __cplusplus >= 201703L
+#include <boost/optional.hpp>
+#define CLARA_CONFIG_OPTIONAL_TYPE boost::optional
 #endif
 #endif
 #endif

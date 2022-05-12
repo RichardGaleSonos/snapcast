@@ -60,8 +60,8 @@ protected:
     void on_read(beast::error_code ec, std::size_t bytes_transferred);
     void on_write(beast::error_code ec, std::size_t bytes, bool close);
 
-    template <class Body, class Allocator, class Send>
-    void handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send);
+    template <class Body, class Allocator, class Send, class Send2, class Send3, class Send4>
+    void handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send, Send2&& send2, Send3&& send3, Send4&& send4);
 
     http::request<http::string_body> req_;
 

@@ -23,6 +23,7 @@
 #include "common/str_compat.hpp"
 #include "common/utils/string_utils.hpp"
 
+#include <boost/make_unique.hpp>
 using namespace std;
 
 namespace encoder
@@ -48,7 +49,7 @@ void assign(void* pointer, T val)
 
 OpusEncoder::OpusEncoder(const std::string& codecOptions) : Encoder(codecOptions), enc_(nullptr)
 {
-    headerChunk_ = make_unique<msg::CodecHeader>("opus");
+    headerChunk_ = boost::make_unique<msg::CodecHeader>("opus");
 }
 
 
@@ -89,7 +90,7 @@ void OpusEncoder::initEncoder()
     if ((sampleFormat_.rate() != 48000) || (sampleFormat_.bits() != 16))
         LOG(INFO, LOG_TAG) << "Resampling input from " << sampleFormat_.toString() << " to " << out.toString() << " as required by Opus\n";
 
-    resampler_ = make_unique<Resampler>(sampleFormat_, out);
+    resampler_ = boost::make_unique<Resampler>(sampleFormat_, out);
     sampleFormat_ = out;
 
     opus_int32 bitrate = 192000;
@@ -165,7 +166,7 @@ void OpusEncoder::initEncoder()
     assign(payload + 8, SWAP_16(sampleFormat_.bits()));
     assign(payload + 10, SWAP_16(sampleFormat_.channels()));
 
-    remainder_ = std::make_unique<msg::PcmChunk>(sampleFormat_, min_chunk_size);
+    remainder_ = boost::make_unique<msg::PcmChunk>(sampleFormat_, min_chunk_size);
     remainder_max_size_ = remainder_->payloadSize;
     remainder_->payloadSize = 0;
 }

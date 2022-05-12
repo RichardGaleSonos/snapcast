@@ -24,12 +24,12 @@ static constexpr auto LOG_TAG = "Metadata";
 namespace
 {
 template <typename T>
-void readTag(const json& j, const std::string& tag, std::optional<T>& dest)
+void readTag(const json& j, const std::string& tag, boost::optional<T>& dest)
 {
     try
     {
         if (!j.contains(tag))
-            dest = std::nullopt;
+            dest = {}; // TODO:REG std::nullopt;
         else
             dest = j[tag].get<T>();
     }
@@ -40,7 +40,7 @@ void readTag(const json& j, const std::string& tag, std::optional<T>& dest)
 }
 
 template <typename T>
-void addTag(json& j, const std::string& tag, const std::optional<T>& source)
+void addTag(json& j, const std::string& tag, const boost::optional<T>& source)
 {
     try
     {
@@ -205,7 +205,7 @@ void Metadata::fromJson(const json& j)
     readTag(j, "trackNumber", track_number);
     readTag(j, "url", url);
     readTag(j, "artUrl", art_url);
-    art_data = std::nullopt;
+    art_data = {}; // TODO:REG std::nullopt;
     if (j.contains("artData") && j["artData"].contains("data") && j["artData"].contains("extension"))
     {
         art_data = ArtData{j["artData"]["data"].get<std::string>(), j["artData"]["extension"].get<std::string>()};

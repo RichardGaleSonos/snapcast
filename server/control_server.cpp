@@ -155,7 +155,7 @@ void ControlServer::start()
             try
             {
                 LOG(INFO, LOG_TAG) << "Creating TCP acceptor for address: " << address << ", port: " << tcp_settings_.port << "\n";
-                acceptor_tcp_.emplace_back(make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
+                acceptor_tcp_.emplace_back(boost::make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
                                                                       tcp::endpoint(boost::asio::ip::address::from_string(address), tcp_settings_.port)));
             }
             catch (const boost::system::system_error& e)
@@ -171,7 +171,7 @@ void ControlServer::start()
             try
             {
                 LOG(INFO, LOG_TAG) << "Creating HTTP acceptor for address: " << address << ", port: " << http_settings_.port << "\n";
-                acceptor_http_.emplace_back(make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
+                acceptor_http_.emplace_back(boost::make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
                                                                        tcp::endpoint(boost::asio::ip::address::from_string(address), http_settings_.port)));
             }
             catch (const boost::system::system_error& e)

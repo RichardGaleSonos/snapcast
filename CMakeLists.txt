@@ -39,7 +39,8 @@ if (MSVC)
     endif()
 else()
     # lots of warnings and all warnings as errors
-    add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function)
+    # add_compile_options(-Wall -Wextra -pedantic -Wno-unused-function)
+    add_compile_options(-Wall -Wextra -Wno-unused-function)
     if (WERROR)
         add_compile_options(-Werror)
     endif()
@@ -127,10 +128,10 @@ if(NOT ANDROID)
 endif()
 
 # Configure compiler options
-set(CMAKE_CXX_STANDARD 17)
+# set(CMAKE_CXX_STANDARD 17)
 
 # Get arch
-include(${CMAKE_SOURCE_DIR}/cmake/TargetArch.cmake)
+include(TargetArch)
 target_architecture(ARCH)
 
 #message(STATUS "System name:  ${CMAKE_SYSTEM_NAME}")
@@ -157,7 +158,7 @@ include(CMakePushCheckState)
 include(CheckIncludeFileCXX)
 include_directories(${INCLUDE_DIRS})
 
-include(${CMAKE_SOURCE_DIR}/cmake/CheckCXX11StringSupport.cmake)
+include(CheckCXX11StringSupport)
 
 CHECK_CXX11_STRING_SUPPORT(HAS_CXX11_STRING_SUPPORT)
 if(NOT HAS_CXX11_STRING_SUPPORT)
@@ -178,10 +179,11 @@ if(NOT WIN32 AND NOT ANDROID)
         list(APPEND INCLUDE_DIRS "/usr/local/include")
     else()
 
-        pkg_search_module(ALSA REQUIRED alsa)
+        # pkg_search_module(ALSA REQUIRED alsa)
         if (ALSA_FOUND)
             add_definitions(-DHAS_ALSA)
         endif (ALSA_FOUND)
+        add_definitions(-DHAS_SONOSLLA)
 
         if(BUILD_WITH_PULSE)
             pkg_search_module(PULSE libpulse)

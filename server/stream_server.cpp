@@ -32,6 +32,7 @@
 // standard headers
 #include <iostream>
 
+#include <boost/make_unique.hpp>
 using namespace std;
 using namespace streamreader;
 
@@ -219,7 +220,7 @@ void StreamServer::start()
         try
         {
             LOG(INFO, LOG_TAG) << "Creating stream acceptor for address: " << address << ", port: " << settings_.stream.port << "\n";
-            acceptor_.emplace_back(make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
+            acceptor_.emplace_back(boost::make_unique<tcp::acceptor>(net::make_strand(io_context_.get_executor()),
                                                               tcp::endpoint(boost::asio::ip::address::from_string(address), settings_.stream.port)));
         }
         catch (const boost::system::system_error& e)

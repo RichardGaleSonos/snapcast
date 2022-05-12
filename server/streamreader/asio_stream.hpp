@@ -30,6 +30,7 @@
 // standard headers
 #include <atomic>
 
+#include <boost/make_unique.hpp>
 
 namespace streamreader
 {
@@ -91,7 +92,7 @@ template <typename ReadStream>
 AsioStream<ReadStream>::AsioStream(PcmStream::Listener* pcmListener, boost::asio::io_context& ioc, const ServerSettings& server_settings, const StreamUri& uri)
     : PcmStream(pcmListener, ioc, server_settings, uri), read_timer_(strand_), state_timer_(strand_)
 {
-    chunk_ = std::make_unique<msg::PcmChunk>(sampleFormat_, chunk_ms_);
+    chunk_ = boost::make_unique<msg::PcmChunk>(sampleFormat_, chunk_ms_);
     LOG(DEBUG, "AsioStream") << "Chunk duration: " << chunk_->durationMs() << " ms, frames: " << chunk_->getFrameCount() << ", size: " << chunk_->payloadSize
                              << "\n";
 

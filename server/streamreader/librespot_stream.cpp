@@ -187,7 +187,7 @@ void LibrespotStream::onStderrMsg(const std::string& line)
         Metadata meta;
         meta.artist = std::vector<std::string>{j["ARTIST"].get<std::string>()};
         meta.title = j["TITLE"].get<std::string>();
-        meta.art_data = {SPOTIFY_LOGO, "svg"};
+        meta.art_data = {}; // TODO:REG {SPOTIFY_LOGO, "svg"};
         Properties properties;
         properties.metadata = std::move(meta);
         setProperties(properties);
@@ -198,7 +198,7 @@ void LibrespotStream::onStderrMsg(const std::string& line)
         Metadata meta;
         meta.title = string(m[1]);
         meta.duration = cpt::stod(m[2]) / 1000.;
-        meta.art_data = {SPOTIFY_LOGO, "svg"};
+        meta.art_data = {}; // TODO:REG {SPOTIFY_LOGO, "svg"};
         Properties properties;
         properties.metadata = std::move(meta);
         setProperties(properties);

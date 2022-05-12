@@ -18,7 +18,11 @@
 
 #include "control_error.hpp"
 
-namespace snapcast::error::control
+namespace snapcast
+{
+namespace error
+{
+namespace control
 {
 
 namespace detail
@@ -81,6 +85,8 @@ const std::error_category& category()
     return instance;
 }
 
+}
+}
 } // namespace snapcast::error::control
 
 std::error_code make_error_code(ControlErrc errc)

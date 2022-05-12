@@ -24,7 +24,7 @@
 #include <atomic>
 #include <cstdio>
 #include <memory>
-#include <optional>
+#include <boost/optional.hpp>
 #include <pulse/pulseaudio.h>
 
 
@@ -79,7 +79,7 @@ protected:
     pa_context* pa_ctx_;
     pa_stream* playstream_;
     pa_proplist* proplist_;
-    std::optional<std::string> server_;
+    boost::optional<std::string> server_;
     std::map<std::string, std::string> properties_;
 
     // cache of the last volume change

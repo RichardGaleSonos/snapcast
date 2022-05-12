@@ -30,6 +30,7 @@
 // standard headers
 #include <memory>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
@@ -175,8 +176,8 @@ void ScriptStreamControl::doStart(const std::string& stream_id, const ServerSett
         throw SnapException("Failed to start control script: '" + script_ + "', exception: " + e.what());
     }
 
-    stream_stdout_ = make_unique<boost::asio::posix::stream_descriptor>(executor_, pipe_stdout_.native_source());
-    stream_stderr_ = make_unique<boost::asio::posix::stream_descriptor>(executor_, pipe_stderr_.native_source());
+    stream_stdout_ = boost::make_unique<boost::asio::posix::stream_descriptor>(executor_, pipe_stdout_.native_source());
+    stream_stderr_ = boost::make_unique<boost::asio::posix::stream_descriptor>(executor_, pipe_stderr_.native_source());
     stdoutReadLine();
     stderrReadLine();
 }

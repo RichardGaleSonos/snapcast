@@ -46,8 +46,8 @@ if (ANDROID)
     list(APPEND SERVER_LIBRARIES boost::boost)
     list(APPEND SERVER_LIBRARIES flac::flac)
     list(APPEND SERVER_LIBRARIES opus::opus)
-    list(APPEND SERVER_LIBRARIES ogg::ogg)
     list(APPEND SERVER_LIBRARIES vorbis::vorbis)
+    list(APPEND SERVER_LIBRARIES ogg::ogg)
     list(APPEND SERVER_SOURCES encoder/flac_encoder.cpp)
     list(APPEND SERVER_SOURCES encoder/ogg_encoder.cpp)
     list(APPEND SERVER_SOURCES encoder/opus_encoder.cpp)
@@ -69,13 +69,14 @@ else()
     if (OGG_FOUND AND VORBIS_FOUND AND VORBISENC_FOUND)
         list(APPEND SERVER_SOURCES encoder/ogg_encoder.cpp)
         list(APPEND SERVER_LIBRARIES
-            ${OGG_LIBRARIES}
             ${VORBIS_LIBRARIES}
-            ${VORBISENC_LIBRARIES})
+            ${VORBISENC_LIBRARIES}
+            ${OGG_LIBRARIES})
         list(APPEND SERVER_INCLUDE
-            ${OGG_INCLUDE_DIRS}
             ${VORBIS_INCLUDE_DIRS}
-            ${VORBISENC_INCLUDE_DIRS})
+            ${VORBISENC_INCLUDE_DIRS}
+            ${OGG_INCLUDE_DIRS})
+
     endif (OGG_FOUND AND VORBIS_FOUND AND VORBISENC_FOUND)
 
     if (FLAC_FOUND)
@@ -92,7 +93,7 @@ else()
 
     if (ALSA_FOUND)
         list(APPEND SERVER_SOURCES streamreader/alsa_stream.cpp)
-        list(APPEND SERVER_LIBRARIES ${ALSA_LIBRARIES})
+        list(APPEND SERVER_LIBRARIES ${ALSA_LINK_LIBRARIES})
         list(APPEND SERVER_INCLUDE ${ALSA_INCLUDE_DIRS})
     endif (ALSA_FOUND)
 
@@ -117,6 +118,6 @@ else()
     install(FILES etc/snapserver.conf COMPONENT server DESTINATION ${CMAKE_INSTALL_SYSCONFDIR})
     install(FILES etc/index.html COMPONENT server DESTINATION ${CMAKE_INSTALL_DATADIR}/snapserver)
     install(DIRECTORY etc/snapweb/ DESTINATION ${CMAKE_INSTALL_DATADIR}/snapserver/snapweb)
-    install(FILES etc/plug-ins/meta_mpd.py PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE DESTINATION ${CMAKE_INSTALL_DATADIR}/snapserver/plug-ins/)
+    # install(FILES etc/plug-ins/meta_mpd.py PERMISSIONS OWNER_EXECUTE GROUP_EXECUTE WORLD_EXECUTE DESTINATION ${CMAKE_INSTALL_DATADIR}/snapserver/plug-ins/)
     #install(FILES ../debian/snapserver.service DESTINATION ${SYSTEMD_SERVICES_INSTALL_DIR})
 endif()

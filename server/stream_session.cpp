@@ -80,7 +80,7 @@ void StreamSession::send(shared_const_buffer const_buf)
                                            if (!msg.is_pcm_chunk || buffer.on_air)
                                                return false;
                                            auto age = chronos::clk::now() - msg.rec_time;
-                                           return (age > std::chrono::milliseconds(bufferMs_) + 100ms);
+                                           return (age > std::chrono::milliseconds(bufferMs_) + std::chrono::milliseconds(100));
                                        }),
                         messages_.end());
 

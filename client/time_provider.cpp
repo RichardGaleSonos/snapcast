@@ -41,13 +41,13 @@ void TimeProvider::setDiff(const tv& c2s, const tv& s2c)
 
 void TimeProvider::setDiffToServer(double ms)
 {
-    using namespace std::chrono_literals;
+    // using namespace std::chrono_literals;
     auto now = std::chrono::system_clock::now();
     static auto lastTimeSync = now;
     auto diff = chronos::abs(now - lastTimeSync);
 
     /// clear diffBuffer if last update is older than a minute
-    if (!diffBuffer_.empty() && (diff > 60s))
+    if (!diffBuffer_.empty() && (diff > std::chrono::seconds(60)))
     {
         LOG(INFO, LOG_TAG) << "Last time sync older than a minute. Clearing time buffer\n";
         diffToServer_ = static_cast<chronos::usec::rep>(ms * 1000);

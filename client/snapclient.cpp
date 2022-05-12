@@ -35,6 +35,9 @@
 #ifdef HAS_WASAPI
 #include "player/wasapi_player.hpp"
 #endif
+#ifdef HAS_SONOSLLA
+#include "player/sonoslla_player.hpp"
+#endif
 #include "player/file_player.hpp"
 #ifdef HAS_DAEMON
 #include "common/daemon.hpp"
@@ -49,11 +52,12 @@
 #include <boost/asio/ip/host_name.hpp>
 #include <boost/asio/signal_set.hpp>
 
+#include <boost/make_unique.hpp>
 using namespace std;
 using namespace popl;
 using namespace player;
 
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 
 static constexpr auto LOG_TAG = "Snapclient";
 
@@ -62,7 +66,7 @@ PcmDevice getPcmDevice(const std::string& player, const std::string& parameter, 
 {
     LOG(DEBUG, LOG_TAG) << "Trying to get PCM device for player: " << player << ", parameter: "
                         << ", card: " << soundcard << "\n";
-#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI)
+#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI) || defined(HAS_SONOSLLA)
     vector<PcmDevice> pcm_devices;
 #if defined(HAS_ALSA)
     if (player == player::ALSA)
@@ -75,6 +79,10 @@ PcmDevice getPcmDevice(const std::string& player, const std::string& parameter, 
 #if defined(HAS_WASAPI)
     if (player == player::WASAPI)
         pcm_devices = WASAPIPlayer::pcm_list();
+#endif
+#if defined(HAS_SONOSLLA)
+    if (player == player::SONOSLLA)
+        pcm_devices = SonosLLAPlayer::pcm_list(parameter);
 #endif
     if (player == player::FILE)
         return FilePlayer::pcm_list(parameter).front();
@@ -142,7 +150,7 @@ int main(int argc, char** argv)
         op.add<Value<string>>("", "hostID", "unique host id, default is MAC address", "", &settings.host_id);
 
 // PCM device specific
-#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI)
+#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI) || defined(HAS_SONOSLLA)
         auto listSwitch = op.add<Switch>("l", "list", "list PCM devices");
         /*auto soundcardValue =*/op.add<Value<string>>("s", "soundcard", "index or name of the pcm device", pcm_device, &pcm_device);
 #endif
@@ -210,7 +218,7 @@ int main(int argc, char** argv)
 
         settings.player.player_name = utils::string::split_left(settings.player.player_name, ':', settings.player.parameter);
 
-#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI)
+#if defined(HAS_ALSA) || defined(HAS_PULSE) || defined(HAS_WASAPI) || defined(HAS_SONOSLLA)
         if (listSwitch->is_set())
         {
             try
@@ -227,6 +235,10 @@ int main(int argc, char** argv)
 #if defined(HAS_WASAPI)
                 if (settings.player.player_name == player::WASAPI)
                     pcm_devices = WASAPIPlayer::pcm_list();
+#endif
+#if defined(HAS_SONOSLLA)
+                if (settings.player.player_name == player::SONOSLLA)
+                    pcm_devices = SonosLLAPlayer::pcm_list(settings.player.parameter);
 #endif
 #ifdef WINDOWS
                 // Set console code page to UTF-8 so console known how to interpret string data
@@ -324,7 +336,7 @@ int main(int argc, char** argv)
                 if (user_group.size() > 1)
                     group = user_group[1];
             }
-            daemon = std::make_unique<Daemon>(user, group, pidFile);
+            daemon = boost::make_unique<Daemon>(user, group, pidFile);
             processPriority = std::min(std::max(-20, processPriority), 19);
             if (processPriority != 0)
                 setpriority(PRIO_PROCESS, 0, processPriority);
@@ -338,8 +350,9 @@ int main(int argc, char** argv)
         if (sample_format->is_set())
         {
             settings.player.sample_format = SampleFormat(sample_format->value());
-            if (settings.player.sample_format.channels() != 0)
-                throw SnapException("sampleformat channels must be * (= same as the source)");
+            cout << "SAMPLE FORMAT" << settings.player.sample_format.toString() << std::endl;
+            // TODO:REG if (settings.player.sample_format.channels() != 0)
+            //     throw SnapException("sampleformat channels must be * (= same as the source)");
             auto bits = settings.player.sample_format.bits();
             if ((bits != 0) && (bits != 16) && (bits != 24) && (bits != 32))
                 throw SnapException("sampleformat bits must be 16, 24, 32, * (= same as the source)");

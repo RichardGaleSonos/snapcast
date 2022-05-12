@@ -23,13 +23,13 @@
 #include "common/utils/logging.hpp"
 #include "common/utils/string_utils.hpp"
 
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 using namespace std;
 
 namespace player
 {
 
-static constexpr std::chrono::milliseconds BUFFER_TIME = 80ms;
+static constexpr std::chrono::milliseconds BUFFER_TIME = std::chrono::milliseconds(80);
 static constexpr int PERIODS = 4;
 static constexpr int MIN_PERIODS = 3;
 
@@ -138,7 +138,7 @@ bool AlsaPlayer::getHardwareVolume(double& volume, bool& muted)
         long vol;
         int err = 0;
         while (snd_mixer_handle_events(mixer_) > 0)
-            this_thread::sleep_for(1us);
+            this_thread::sleep_for(std::chrono::microseconds(1));
         long minv, maxv;
         if ((err = snd_mixer_selem_get_playback_dB_range(elem_, &minv, &maxv)) == 0)
         {
@@ -203,7 +203,7 @@ void AlsaPlayer::waitForEvent()
             if (((snd_ctl_read(ctl_, event) >= 0) && (snd_ctl_event_get_type(event) == SND_CTL_EVENT_ELEM)) || (revents == 0))
             {
                 auto now = std::chrono::steady_clock::now();
-                if (now - last_change_ < 1s)
+                if (now - last_change_ < std::chrono::seconds(1))
                 {
                     LOG(DEBUG, LOG_TAG) << "Last volume change by server: " << std::chrono::duration_cast<std::chrono::milliseconds>(now - last_change_).count()
                                         << " ms => ignoring volume change\n";
@@ -213,7 +213,7 @@ void AlsaPlayer::waitForEvent()
                 // Sometimes the old volume is reported by getHardwareVolume after this event has been raised.
                 // As workaround we defer getting the volume by 20ms.
                 timer_.cancel();
-                timer_.expires_after(20ms);
+                timer_.expires_after(std::chrono::milliseconds(20));
                 timer_.async_wait([this](const boost::system::error_code& ec) {
                     if (!ec)
                     {
@@ -529,7 +529,7 @@ bool AlsaPlayer::getAvailDelay(snd_pcm_sframes_t& avail, snd_pcm_sframes_t& dela
     {
         LOG(WARNING, LOG_TAG) << "snd_pcm_avail_delay failed: " << snd_strerror(result) << " (" << result << "), avail: " << avail << ", delay: " << delay
                               << ", using snd_pcm_avail amd snd_pcm_delay.\n";
-        this_thread::sleep_for(1ms);
+        this_thread::sleep_for(std::chrono::milliseconds(1));
         avail = snd_pcm_avail(handle_);
         result = snd_pcm_delay(handle_, &delay);
         if ((result < 0) || (delay < 0))
@@ -597,7 +597,7 @@ void AlsaPlayer::worker()
 
         if (!getAvailDelay(framesAvail, framesDelay))
         {
-            this_thread::sleep_for(10ms);
+            this_thread::sleep_for(std::chrono::milliseconds(10));
             snd_pcm_prepare(handle_);
             continue;
         }
@@ -610,7 +610,7 @@ void AlsaPlayer::worker()
         if (framesAvail == 0)
         {
             auto frame_time = std::chrono::microseconds(static_cast<int>(frames_ / format.usRate()));
-            std::chrono::microseconds wait = std::min(frame_time / 2, std::chrono::microseconds(10ms));
+            std::chrono::microseconds wait = std::min(frame_time / 2, std::chrono::microseconds(std::chrono::milliseconds(10)));
             LOG(DEBUG, LOG_TAG) << "No frames available, waiting for " << wait.count() << " us\n";
             this_thread::sleep_for(wait);
             continue;
@@ -643,9 +643,9 @@ void AlsaPlayer::worker()
         else
         {
             LOG(INFO, LOG_TAG) << "Failed to get chunk\n";
-            while (active_ && !stream_->waitForChunk(100ms))
+            while (active_ && !stream_->waitForChunk(std::chrono::milliseconds(100)))
             {
-                static utils::logging::TimeConditional cond(2s);
+                static utils::logging::TimeConditional cond(std::chrono::seconds(2));
                 LOG(DEBUG, LOG_TAG) << cond << "Waiting for chunk\n";
                 if ((handle_ != nullptr) && (chronos::getTickCount() - lastChunkTick > 5000))
                 {

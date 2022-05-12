@@ -24,6 +24,7 @@
 #include <cstring>
 #include <iostream>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
@@ -215,7 +216,7 @@ void metadata_callback(const FLAC__StreamDecoder* /*decoder*/, const FLAC__Strea
 void error_callback(const FLAC__StreamDecoder* /*decoder*/, FLAC__StreamDecoderErrorStatus status, void* client_data)
 {
     LOG(ERROR, LOG_TAG) << "Got error callback: " << FLAC__StreamDecoderErrorStatusString[status] << "\n";
-    static_cast<FlacDecoder*>(client_data)->lastError_ = std::make_unique<FLAC__StreamDecoderErrorStatus>(status);
+    static_cast<FlacDecoder*>(client_data)->lastError_ = boost::make_unique<FLAC__StreamDecoderErrorStatus>(status);
 }
 } // namespace callback
 

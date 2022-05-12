@@ -43,7 +43,7 @@ struct ServerSettings
         std::vector<std::string> bind_to_address{{"0.0.0.0"}};
         std::string doc_root{""};
         std::string host{"<hostname>"};
-        inline static ImageCache image_cache;
+        // inline static ImageCache image_cache;
     };
 
     struct Tcp

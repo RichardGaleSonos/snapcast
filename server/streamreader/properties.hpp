@@ -25,7 +25,7 @@
 #include "metadata.hpp"
 
 // standard headers
-#include <optional>
+#include <boost/optional.hpp>
 #include <set>
 #include <string>
 
@@ -153,25 +153,25 @@ public:
     Properties(const json& j);
 
     /// Meta data
-    std::optional<Metadata> metadata;
+    boost::optional<Metadata> metadata;
     /// https://www.musicpd.org/doc/html/protocol.html#tags
     /// The current playback status
-    std::optional<PlaybackStatus> playback_status;
+    boost::optional<PlaybackStatus> playback_status;
     /// The current loop / repeat status
-    std::optional<LoopStatus> loop_status;
+    boost::optional<LoopStatus> loop_status;
     /// The current playback rate
-    std::optional<float> rate;
+    boost::optional<float> rate;
     /// A value of false indicates that playback is progressing linearly through a playlist, while true means playback is progressing through a playlist in some
     /// other order.
-    std::optional<bool> shuffle;
+    boost::optional<bool> shuffle;
     /// The volume level between 0-100
-    std::optional<int> volume;
+    boost::optional<int> volume;
     /// The current track position in seconds
-    std::optional<float> position;
+    boost::optional<float> position;
     /// The minimum value which the Rate property can take. Clients should not attempt to set the Rate property below this value
-    std::optional<float> minimum_rate;
+    boost::optional<float> minimum_rate;
     /// The maximum value which the Rate property can take. Clients should not attempt to set the Rate property above this value
-    std::optional<float> maximum_rate;
+    boost::optional<float> maximum_rate;
     /// Whether the client can call the next method on this interface and expect the current track to change
     bool can_go_next = false;
     /// Whether the client can call the previous method on this interface and expect the current track to change

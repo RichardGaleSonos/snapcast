@@ -28,15 +28,16 @@
 #include <cerrno>
 #include <memory>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 
 namespace streamreader
 {
 
 static constexpr auto LOG_TAG = "AlsaStream";
-static constexpr auto kResyncTolerance = 50ms;
+static constexpr auto kResyncTolerance = std::chrono::milliseconds(50);
 
 // https://superuser.com/questions/597227/linux-arecord-capture-sound-card-output-rather-than-microphone-input
 // https://wiki.ubuntuusers.de/.asoundrc/
@@ -66,7 +67,7 @@ void wait(boost::asio::steady_timer& timer, const std::chrono::duration<Rep, Per
 
 
 AlsaStream::AlsaStream(PcmStream::Listener* pcmListener, boost::asio::io_context& ioc, const ServerSettings& server_settings, const StreamUri& uri)
-    : PcmStream(pcmListener, ioc, server_settings, uri), handle_(nullptr), read_timer_(strand_), silence_(0ms)
+    : PcmStream(pcmListener, ioc, server_settings, uri), handle_(nullptr), read_timer_(strand_), silence_(std::chrono::milliseconds(0))
 {
     device_ = uri_.getQuery("device", "hw:0");
     send_silence_ = (uri_.getQuery("send_silence", "false") == "true");
@@ -94,7 +95,7 @@ void AlsaStream::start()
     // max_idle_bytes_ = sampleFormat_.rate() * sampleFormat_.frameSize() * dryout_ms_ / 1000;
 
     initAlsa();
-    chunk_ = std::make_unique<msg::PcmChunk>(sampleFormat_, chunk_ms_);
+    chunk_ = boost::make_unique<msg::PcmChunk>(sampleFormat_, chunk_ms_);
     silent_chunk_ = std::vector<char>(chunk_->payloadSize, 0);
     LOG(DEBUG, LOG_TAG) << "Chunk duration: " << chunk_->durationMs() << " ms, frames: " << chunk_->getFrameCount() << ", size: " << chunk_->payloadSize
                         << "\n";
@@ -266,7 +267,7 @@ void AlsaStream::do_read()
         }
         else
         {
-            silence_ = 0ms;
+            silence_ = std::chrono::milliseconds(0);
             if ((state_ == ReaderState::kIdle) && !send_silence_)
                 first_ = true;
             setState(ReaderState::kPlaying);
@@ -288,7 +289,7 @@ void AlsaStream::do_read()
         nextTick_ += duration;
         auto currentTick = std::chrono::steady_clock::now();
         auto next_read = nextTick_ - currentTick;
-        if (next_read >= 0ms)
+        if (next_read >= std::chrono::milliseconds(0))
         {
             // LOG(DEBUG, LOG_TAG) << "Next read: " << std::chrono::duration_cast<std::chrono::milliseconds>(next_read).count() << "\n";
             // synchronize reads to an interval of chunk_ms_
@@ -321,7 +322,7 @@ void AlsaStream::do_read()
         first_ = true;
         uninitAlsa();
         initAlsa();
-        wait(read_timer_, 100ms, [this] { do_read(); });
+        wait(read_timer_, std::chrono::milliseconds(100), [this] { do_read(); });
     }
 }
 

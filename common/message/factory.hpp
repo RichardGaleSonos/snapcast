@@ -32,6 +32,7 @@
 #include "json_message.hpp"
 #include <string>
 
+#include <boost/make_unique.hpp>
 
 namespace msg
 {
@@ -56,7 +57,7 @@ namespace factory
 template <typename T>
 static std::unique_ptr<T> createMessage(const BaseMessage& base_message, char* buffer)
 {
-    std::unique_ptr<T> result = std::make_unique<T>();
+    std::unique_ptr<T> result = boost::make_unique<T>();
     if (!result)
         return nullptr;
     result->deserialize(base_message, buffer);

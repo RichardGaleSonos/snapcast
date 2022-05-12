@@ -32,6 +32,7 @@
 // standard headers
 #include <iostream>
 
+#include <boost/make_unique.hpp>
 using namespace std;
 using namespace streamreader;
 
@@ -854,9 +855,9 @@ void Server::start()
 {
     try
     {
-        controlServer_ = std::make_unique<ControlServer>(io_context_, settings_.tcp, settings_.http, this);
-        streamServer_ = std::make_unique<StreamServer>(io_context_, settings_, this);
-        streamManager_ = std::make_unique<StreamManager>(this, io_context_, settings_);
+        controlServer_ = boost::make_unique<ControlServer>(io_context_, settings_.tcp, settings_.http, this);
+        streamServer_ = boost::make_unique<StreamServer>(io_context_, settings_, this);
+        streamManager_ = boost::make_unique<StreamManager>(this, io_context_, settings_);
 
         // Add normal sources first
         for (const auto& sourceUri : settings_.stream.sources)

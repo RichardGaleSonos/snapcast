@@ -28,7 +28,7 @@ namespace utils
 namespace logging
 {
 
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 
 /// Log Conditional to limit log frequency
 struct TimeConditional : public AixLog::Conditional
@@ -43,7 +43,7 @@ struct TimeConditional : public AixLog::Conditional
     /// return true for the next check
     void reset()
     {
-        last_time_ = std::chrono::steady_clock::now() - interval_ - 1s;
+        last_time_ = std::chrono::steady_clock::now() - interval_ - std::chrono::seconds(1);
     }
 
     /// Change log interval

@@ -79,7 +79,7 @@ protected:
     void push();
 
     template <typename T>
-    void setMetaData(std::optional<T>& meta_value, const T& value);
+    void setMetaData(boost::optional<T>& meta_value, const T& value);
 #endif
 
     void setParamsAndPipePathFromPort();

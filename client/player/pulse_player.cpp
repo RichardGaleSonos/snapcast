@@ -34,7 +34,7 @@
 #include <iostream>
 
 
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 using namespace std;
 
 namespace player
@@ -143,7 +143,7 @@ vector<PcmDevice> PulsePlayer::pcm_list(const std::string& parameter)
 
 PulsePlayer::PulsePlayer(boost::asio::io_context& io_context, const ClientSettings::Player& settings, std::shared_ptr<Stream> stream)
     : Player(io_context, settings, stream), latency_(BUFFER_TIME), pa_ml_(nullptr), pa_ctx_(nullptr), playstream_(nullptr), proplist_(nullptr),
-      server_(std::nullopt)
+      server_()
 {
     auto params = utils::string::split_pairs_to_container<std::vector<std::string>>(settings.parameter, ',', '=');
     if (params.find("buffer_time") != params.end())

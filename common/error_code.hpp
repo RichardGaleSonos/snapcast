@@ -20,7 +20,7 @@
 #define ERROR_CODE_HPP
 
 
-#include <optional>
+#include <boost/optional.hpp>
 #include <string>
 #include <system_error>
 
@@ -30,11 +30,11 @@ namespace snapcast
 
 struct ErrorCode : public std::error_code
 {
-    ErrorCode() : std::error_code(), detail_(std::nullopt)
+    ErrorCode() : std::error_code(), detail_()
     {
     }
 
-    ErrorCode(const std::error_code& code) : std::error_code(code), detail_(std::nullopt)
+    ErrorCode(const std::error_code& code) : std::error_code(code), detail_()
     {
     }
 
@@ -50,7 +50,7 @@ struct ErrorCode : public std::error_code
     }
 
 private:
-    std::optional<std::string> detail_;
+    boost::optional<std::string> detail_;
 };
 
 

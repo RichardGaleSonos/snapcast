@@ -28,6 +28,7 @@
 using namespace std;
 namespace websocket = beast::websocket; // from <boost/beast/websocket.hpp>
 
+extern ImageCache image_cache;
 static constexpr auto LOG_TAG = "ControlSessionHTTP";
 
 
@@ -161,8 +162,8 @@ void ControlSessionHttp::start()
 // request. The type of the response object depends on the
 // contents of the request, so the interface requires the
 // caller to pass a generic lambda for receiving the response.
-template <class Body, class Allocator, class Send>
-void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send)
+template <class Body, class Allocator, class Send, class Send2, class Send3, class Send4>
+void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<Allocator>>&& req, Send&& send, Send2&& send2, Send3&& send3, Send4&& send4)
 {
     // Returns a bad request response
     auto const bad_request = [&req](boost::beast::string_view why) {
@@ -242,12 +243,12 @@ void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<A
     {
         pos += image_cache_target.size();
         target = target.substr(pos);
-        auto image = settings_.image_cache.getImage(std::string(target));
+        auto image = image_cache.getImage(std::string(target));
         LOG(DEBUG, LOG_TAG) << "image cache: " << target << ", found: " << image.has_value() << "\n";
         if (image.has_value())
         {
             http::response<http::buffer_body> res{http::status::ok, req.version()};
-            res.body().data = image.value().data();
+            res.body().data = (void*)image.value().data();
             const auto size = image.value().size();
             res.body().size = size;
             res.body().more = false;
@@ -255,7 +256,7 @@ void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<A
             res.set(http::field::content_type, mime_type(target));
             res.content_length(size);
             res.keep_alive(req.keep_alive());
-            return send(std::move(res));
+            return send3(std::move(res));
         }
         return send(not_found(req.target()));
     }
@@ -300,7 +301,7 @@ void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<A
         res.set(http::field::content_type, mime_type(path));
         res.content_length(size);
         res.keep_alive(req.keep_alive());
-        return send(std::move(res));
+        return send4(std::move(res));
     }
 
     // Respond to GET request
@@ -309,7 +310,7 @@ void ControlSessionHttp::handle_request(http::request<Body, http::basic_fields<A
     res.set(http::field::content_type, mime_type(path));
     res.content_length(size);
     res.keep_alive(req.keep_alive());
-    return send(std::move(res));
+    return send2(std::move(res));
 }
 
 void ControlSessionHttp::on_read(beast::error_code ec, std::size_t bytes_transferred)
@@ -373,7 +374,38 @@ void ControlSessionHttp::on_read(beast::error_code ec, std::size_t bytes_transfe
     }
 
     // Send the response
-    handle_request(std::move(req_), [this](auto&& response) {
+    // handle_request(std::move(req_), [this](auto&& response) {
+    handle_request(std::move(req_), [this](http::response<http::string_body>&& response) {
+        // The lifetime of the message has to extend
+        // for the duration of the async operation so
+        // we use a shared_ptr to manage it.
+        using response_type = typename std::decay<decltype(response)>::type;
+        auto sp = std::make_shared<response_type>(std::forward<decltype(response)>(response));
+
+        // Write the response
+        http::async_write(this->socket_, *sp,
+                          [this, self = this->shared_from_this(), sp](beast::error_code ec, std::size_t bytes) { this->on_write(ec, bytes, sp->need_eof()); });
+    }, [this](http::response<http::file_body>&& response) {
+        // The lifetime of the message has to extend
+        // for the duration of the async operation so
+        // we use a shared_ptr to manage it.
+        using response_type = typename std::decay<decltype(response)>::type;
+        auto sp = std::make_shared<response_type>(std::forward<decltype(response)>(response));
+
+        // Write the response
+        http::async_write(this->socket_, *sp,
+                          [this, self = this->shared_from_this(), sp](beast::error_code ec, std::size_t bytes) { this->on_write(ec, bytes, sp->need_eof()); });
+    }, [this](http::response<http::buffer_body>&& response) {
+        // The lifetime of the message has to extend
+        // for the duration of the async operation so
+        // we use a shared_ptr to manage it.
+        using response_type = typename std::decay<decltype(response)>::type;
+        auto sp = std::make_shared<response_type>(std::forward<decltype(response)>(response));
+
+        // Write the response
+        http::async_write(this->socket_, *sp,
+                          [this, self = this->shared_from_this(), sp](beast::error_code ec, std::size_t bytes) { this->on_write(ec, bytes, sp->need_eof()); });
+    }, [this](http::response<http::empty_body>&& response) {
         // The lifetime of the message has to extend
         // for the duration of the async operation so
         // we use a shared_ptr to manage it.

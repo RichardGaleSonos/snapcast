@@ -23,12 +23,12 @@ static constexpr auto LOG_TAG = "Properties";
 namespace
 {
 template <typename T>
-void readTag(const json& j, const std::string& tag, std::optional<T>& dest)
+void readTag(const json& j, const std::string& tag, boost::optional<T>& dest)
 {
     try
     {
         if (!j.contains(tag))
-            dest = std::nullopt;
+            dest = {}; // TODO:REG std::nullopt;
         else
             dest = j[tag].get<T>();
     }
@@ -41,7 +41,7 @@ void readTag(const json& j, const std::string& tag, std::optional<T>& dest)
 template <typename T>
 void readTag(const json& j, const std::string& tag, T& dest, const T& def)
 {
-    std::optional<T> val;
+    boost::optional<T> val;
     readTag(j, tag, val);
     if (val.has_value())
         dest = val.value();
@@ -63,7 +63,7 @@ void addTag(json& j, const std::string& tag, const T& source)
 }
 
 template <typename T>
-void addTag(json& j, const std::string& tag, const std::optional<T>& source)
+void addTag(json& j, const std::string& tag, const boost::optional<T>& source)
 {
     if (!source.has_value())
     {
@@ -86,9 +86,9 @@ json Properties::toJson() const
 {
     json j;
     if (playback_status.has_value())
-        addTag(j, "playbackStatus", std::optional<std::string>(to_string(playback_status.value())));
+        addTag(j, "playbackStatus", boost::optional<std::string>(to_string(playback_status.value())));
     if (loop_status.has_value())
-        addTag(j, "loopStatus", std::optional<std::string>(to_string(loop_status.value())));
+        addTag(j, "loopStatus", boost::optional<std::string>(to_string(loop_status.value())));
     addTag(j, "rate", rate);
     addTag(j, "shuffle", shuffle);
     addTag(j, "volume", volume);
@@ -119,19 +119,19 @@ void Properties::fromJson(const json& j)
             LOG(WARNING, LOG_TAG) << "Property not supoorted: " << element.key() << "\n";
     }
 
-    std::optional<std::string> opt;
+    boost::optional<std::string> opt;
 
     readTag(j, "playbackStatus", opt);
     if (opt.has_value())
         playback_status = playback_status_from_string(opt.value());
     else
-        playback_status = std::nullopt;
+        playback_status = {}; // TODO:REG std::nullopt;
 
     readTag(j, "loopStatus", opt);
     if (opt.has_value())
         loop_status = loop_status_from_string(opt.value());
     else
-        loop_status = std::nullopt;
+        loop_status = {}; // TODO:REG std::nullopt;
     readTag(j, "rate", rate);
     readTag(j, "shuffle", shuffle);
     readTag(j, "volume", volume);
@@ -152,7 +152,7 @@ void Properties::fromJson(const json& j)
         metadata = m;
     }
     else
-        metadata = std::nullopt;
+        metadata = {}; // TODO:REG std::nullopt;
 }
 
 bool Properties::operator==(const Properties& other) const

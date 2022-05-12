@@ -30,13 +30,13 @@
 
 
 using namespace std;
-using namespace std::chrono_literals;
+// using namespace std::chrono_literals;
 
 namespace streamreader
 {
 
 static constexpr auto LOG_TAG = "PosixStream";
-static constexpr auto kResyncTolerance = 50ms;
+static constexpr auto kResyncTolerance = std::chrono::milliseconds(50);
 
 PosixStream::PosixStream(PcmStream::Listener* pcmListener, boost::asio::io_context& ioc, const ServerSettings& server_settings, const StreamUri& uri)
     : AsioStream<stream_descriptor>(pcmListener, ioc, server_settings, uri)
@@ -63,7 +63,7 @@ void PosixStream::connect()
     catch (const std::exception& e)
     {
         LOG(ERROR, LOG_TAG) << "Connect exception: " << e.what() << "\n";
-        wait(read_timer_, 100ms, [this] { connect(); });
+        wait(read_timer_, std::chrono::milliseconds(100), [this] { connect(); });
     }
 }
 
@@ -140,7 +140,7 @@ void PosixStream::do_read()
         nextTick_ += duration;
         auto currentTick = std::chrono::steady_clock::now();
         auto next_read = nextTick_ - currentTick;
-        if (next_read >= 0ms)
+        if (next_read >= std::chrono::milliseconds(0))
         {
             // synchronize reads to an interval of chunk_ms_
             wait(read_timer_, nextTick_ - currentTick, [this] { do_read(); });
@@ -170,7 +170,7 @@ void PosixStream::do_read()
             lastException_ = e.what();
         }
         disconnect();
-        wait(read_timer_, 100ms, [this] { connect(); });
+        wait(read_timer_, std::chrono::milliseconds(100), [this] { connect(); });
     }
 }
 

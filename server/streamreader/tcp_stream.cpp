@@ -32,6 +32,7 @@
 #include <cerrno>
 #include <memory>
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
@@ -64,7 +65,7 @@ TcpStream::TcpStream(PcmStream::Listener* pcmListener, boost::asio::io_context& 
 
     LOG(INFO, LOG_TAG) << "TcpStream host: " << host_ << ", port: " << port_ << ", is server: " << is_server_ << "\n";
     if (is_server_)
-        acceptor_ = make_unique<tcp::acceptor>(strand_, tcp::endpoint(boost::asio::ip::address::from_string(host_), port_));
+        acceptor_ = boost::make_unique<tcp::acceptor>(strand_, tcp::endpoint(boost::asio::ip::address::from_string(host_), port_));
 }
 
 
@@ -79,7 +80,7 @@ void TcpStream::do_connect()
             if (!ec)
             {
                 LOG(DEBUG, LOG_TAG) << "New client connection\n";
-                stream_ = make_unique<tcp::socket>(move(socket));
+                stream_ = boost::make_unique<tcp::socket>(move(socket));
                 on_connect();
             }
             else
@@ -90,7 +91,7 @@ void TcpStream::do_connect()
     }
     else
     {
-        stream_ = make_unique<tcp::socket>(strand_);
+        stream_ = boost::make_unique<tcp::socket>(strand_);
         boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::address::from_string(host_), port_);
         stream_->async_connect(endpoint, [this](const boost::system::error_code& ec) {
             if (!ec)
@@ -101,7 +102,7 @@ void TcpStream::do_connect()
             else
             {
                 LOG(DEBUG, LOG_TAG) << "Connect failed: " << ec.message() << "\n";
-                wait(reconnect_timer_, 1s, [this] { connect(); });
+                wait(reconnect_timer_, std::chrono::seconds(1), [this] { connect(); });
             }
         });
     }

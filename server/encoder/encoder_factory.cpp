@@ -32,6 +32,7 @@
 #include "common/snap_exception.hpp"
 #include "common/utils/string_utils.hpp"
 
+#include <boost/make_unique.hpp>
 
 using namespace std;
 
@@ -48,20 +49,20 @@ std::unique_ptr<Encoder> EncoderFactory::createEncoder(const std::string& codecS
         codec = utils::string::trim_copy(codec.substr(0, codec.find(':')));
     }
     if (codec == "pcm")
-        return std::make_unique<PcmEncoder>(codecOptions);
+        return boost::make_unique<PcmEncoder>(codecOptions);
     else if (codec == "null")
-        return std::make_unique<NullEncoder>(codecOptions);
+        return boost::make_unique<NullEncoder>(codecOptions);
 #if defined(HAS_OGG) && defined(HAS_VORBIS) && defined(HAS_VORBIS_ENC)
     else if (codec == "ogg")
-        return std::make_unique<OggEncoder>(codecOptions);
+        return boost::make_unique<OggEncoder>(codecOptions);
 #endif
 #if defined(HAS_FLAC)
     else if (codec == "flac")
-        return std::make_unique<FlacEncoder>(codecOptions);
+        return boost::make_unique<FlacEncoder>(codecOptions);
 #endif
 #if defined(HAS_OPUS)
     else if (codec == "opus")
-        return std::make_unique<OpusEncoder>(codecOptions);
+        return boost::make_unique<OpusEncoder>(codecOptions);
 #endif
 
     throw SnapException("unknown codec: " + codec);

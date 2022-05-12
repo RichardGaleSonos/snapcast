@@ -27,6 +27,7 @@
 #include "common/utils/file_utils.hpp"
 #include "common/utils/string_utils.hpp"
 
+#include <boost/make_unique.hpp>
 using namespace std;
 
 namespace streamreader
@@ -189,7 +190,7 @@ void AirplayStream::push()
 }
 
 template <typename T>
-void AirplayStream::setMetaData(std::optional<T>& meta_value, const T& value)
+void AirplayStream::setMetaData(boost::optional<T>& meta_value, const T& value)
 {
     // Only overwrite metadata and set metadata_dirty_ if the metadata has changed.
     // This avoids multiple unnecessary transmissions of the same metadata.
@@ -232,14 +233,14 @@ void AirplayStream::pipeReadLine()
         try
         {
             int fd = open(pipePath_.c_str(), O_RDONLY | O_NONBLOCK);
-            pipe_fd_ = std::make_unique<boost::asio::posix::stream_descriptor>(strand_, fd);
+            pipe_fd_ = boost::make_unique<boost::asio::posix::stream_descriptor>(strand_, fd);
             LOG(INFO, LOG_TAG) << "Metadata pipe opened: " << pipePath_ << "\n";
         }
         catch (const std::exception& e)
         {
             LOG(ERROR, LOG_TAG) << "Error opening metadata pipe, retrying in 500ms. Error: " << e.what() << "\n";
             pipe_fd_ = nullptr;
-            wait(pipe_open_timer_, 500ms, [this] { pipeReadLine(); });
+            wait(pipe_open_timer_, std::chrono::milliseconds(500), [this] { pipeReadLine(); });
             return;
         }
     }
@@ -253,7 +254,7 @@ void AirplayStream::pipeReadLine()
                 // For some reason, EOF is returned until the first metadata is written to the pipe.
                 // If shairport-sync has not finished setting up the pipe, bad file descriptor is returned.
                 LOG(INFO, LOG_TAG) << "Waiting for metadata, retrying in 2500ms\n";
-                wait(pipe_open_timer_, 2500ms, [this] { pipeReadLine(); });
+                wait(pipe_open_timer_, std::chrono::milliseconds(2500), [this] { pipeReadLine(); });
             }
             else
             {
